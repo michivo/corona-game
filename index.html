@@ -30,8 +30,9 @@
             Du bist der Arzt links oben - wenn du einen erkrankten Bewohner erwischst, kannst du ihn heilen.
             Erwischt ein kranker Bewohner aber einen gesunden, steckt er diesen leider an.
             <ul class="list-group">
-                <li class="list-group-item"><img src="img/doctor.png"> <b>Der Arzt - du kannst ihn mit den Pfeiltasten auf
-                    deiner Tastatur steuern und kranke Bewohner heilen, wenn du ihnen nahe kommst!</b></li>
+                <li class="list-group-item"><img src="img/doctor.png"> <b>Der Arzt - du kannst ihn mit den Pfeiltasten
+                        auf
+                        deiner Tastatur steuern und kranke Bewohner heilen, wenn du ihnen nahe kommst!</b></li>
                 <li class="list-group-item"><img src="img/healthy.png"> Ein gesunder Bewohner. Er kann noch angesteckt
                     werden!</li>
                 <li class="list-group-item"><img src="img/sick.png"> Ein kranker Bewohner. Versuche, ihn zu heilen. Er
@@ -44,20 +45,27 @@
             </ul>
 
             Wenn du das Spiel neu starten willst, drück einfach die F5-Taste auf deiner Tastatur.
-            Du kannst während des Spiels "Social Distancing" aktivieren oder deaktivieren. <b>Viel Spaß! Besiege den Virus
-            und bleib gesund!</b>
+            Du kannst während des Spiels "Social Distancing" aktivieren oder deaktivieren. <b>Viel Spaß! Besiege den
+                Virus
+                und bleib gesund!</b>
         </p>
         <p>
-            Unten siehst du eine Kurve, dei anzeigt, wie viele Bewohner gesund sind (hellgrau), wie viele krank sind (rot),
+            Unten siehst du eine Kurve, dei anzeigt, wie viele Bewohner gesund sind (hellgrau), wie viele krank sind
+            (rot),
             wie viele bereits genesen sind (grün) und wie viele leider verstorben sind (dunkelgrau). <br />
             Wie du leicht sehen kannst:
             Ohne Social Distancing hilft der beste Arzt nichts. Viele Leute werden krank und einige sterben. Mit Social
             Distancing dagegen schaffst du es vielleicht sogar ohne Todesfälle!
-        </p>   
+        </p>
         <button type="button" class="btn btn-success btn-lg" onclick="startGame(true)">Spiel mit Social Distancing
             starten!</button>
         <button type="button" class="btn btn-warning btn-lg" onclick="startGame(false)">Spiel ohne Social Distancing
-            starten!</button>         
+            starten!</button>
+        <p>&nbsp;</p>
+        <p>Dieses Spiel habe ich gemeinsam mit meinen beiden Söhnen (E & O, 8 bzw. 6 Jahre alt) entwickelt. Wenn du
+            Verbesserungsvorschläge hast, kannst du dich gerne an mich wenden: <a
+                href="mailto:michfasch@gmx.at">michfasch@gmx.at</a>.
+        </p>
     </div>
     <script>
         var width = window.innerWidth;
@@ -174,7 +182,7 @@
             sick2.sprite.setCollideWorldBounds(true);
             sicks.push(sick1);
             sicks.push(sick2);
-            if(width < 1201) {
+            if (width < 1201) {
                 return;
             }
 
