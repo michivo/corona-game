@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser-arcade-physics.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+    <title>Das Corona-Spiel</title>
+</head>
+
+<body>
+
+    <div id="intro" class="container">
+        <h1>
+            Willkommen beim Corona-Spiel!
+        </h1>
+        <p>
+            Mit dem Corona-Spiel kannst du auf einfache Weise sehen, was das "Social Distancing" bringt.
+            Du startest in einem Ort mit 200 Bewohnern, 3 davon sind leider am Corona-Virus erkrankt. Kannst du
+            das Virus aufhalten?<br>
+            Du bist der Arzt links oben - wenn du einen erkrankten Bewohner erwischst, kannst du ihn heilen.
+            Erwischt ein kranker Bewohner aber einen gesunden, steckt er diesen leider an.
+            <ul class="list-group">
+                <li class="list-group-item"><img src="img/doctor.png"> <b>Der Arzt - du kannst ihn mit den Pfeiltasten auf
+                    deiner Tastatur steuern und kranke Bewohner heilen, wenn du ihnen nahe kommst!</b></li>
+                <li class="list-group-item"><img src="img/healthy.png"> Ein gesunder Bewohner. Er kann noch angesteckt
+                    werden!</li>
+                <li class="list-group-item"><img src="img/sick.png"> Ein kranker Bewohner. Versuche, ihn zu heilen. Er
+                    steckt gesunde Bewohner an, die ihm zu nahe kommen.</li>
+                <li class="list-group-item"><img src="img/recovered.png"> Ein Bewohner, der den Virus hatte und genesen
+                    ist. Er kann niemanden anstecken und nicht angesteckt werden.</li>
+                <li class="list-group-item"><img src="img/dead.png"> Ein Todesfall. Leider sterben auch Leute am
+                    Corona-Virus. Je mehr Leute gleichzeitig krank sind, desto eher sterben die Leute, weil die Ärzte
+                    überfordert sind.</li>
+            </ul>
+
+            Wenn du das Spiel neu starten willst, drück einfach die F5-Taste auf deiner Tastatur.
+            Du kannst während des Spiels "Social Distancing" aktivieren oder deaktivieren. <b>Viel Spaß! Besiege den Virus
+            und bleib gesund!</b>
+        </p>
+        <p>
+            Unten siehst du eine Kurve, dei anzeigt, wie viele Bewohner gesund sind (hellgrau), wie viele krank sind (rot),
+            wie viele bereits genesen sind (grün) und wie viele leider verstorben sind (dunkelgrau). <br />
+            Wie du leicht sehen kannst:
+            Ohne Social Distancing hilft der beste Arzt nichts. Viele Leute werden krank und einige sterben. Mit Social
+            Distancing dagegen schaffst du es vielleicht sogar ohne Todesfälle!
+        </p>   
+        <button type="button" class="btn btn-success btn-lg" onclick="startGame(true)">Spiel mit Social Distancing
+            starten!</button>
+        <button type="button" class="btn btn-warning btn-lg" onclick="startGame(false)">Spiel ohne Social Distancing
+            starten!</button>         
+    </div>
+    <script>
+        var width = window.innerWidth;
+        var height = window.innerHeight;
+        var docSize = 36;
+        var docSpeed = 2;
+        var dudeSize = 30;
+
+        var config = {
+            type: Phaser.AUTO,
+            width: width,
+            height: height,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 }
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
+
+        var sicks = [];
+        var healthies = [];
+        var recovereds = [];
+        var keys;
+        var doctor;
+
+        function startGame(withSocialDistancing) {
+            document.getElementById("intro").style.display = "none";
+            isSocialDistancingActive = withSocialDistancing;
+            var game = new Phaser.Game(config);
+        }
+
+        var healthyLabel;
+        var deadLabel;
+        var sickLabel;
+        var recoveredLabel;
+        var socialDistancingButton;
+
+        var recoveredCount = 0;
+        var deadCount = 0;
+        var sickCount = width > 1200 ? 3 : 2;
+        var healthyCount = width > 1500 ? 197 : (width > 1200 ? 147 : 98);
+        var dudeCount = healthyCount + sickCount;
+        var bottomBarHeight = 200;
+        var healDistance = 200;
+        var infectDistance = 200;
+
+        var isSocialDistancingActive = false;
+
+
+        function activateSocialDistancing() {
+            isSocialDistancingActive = !isSocialDistancingActive;
+
+            socialDistancingButton.setText(isSocialDistancingActive ? 'Social Distancing\r\n  deaktivieren' : 'Social Distancing\r\n   aktivieren');
+
+            socialDistancingButton.setColor(isSocialDistancingActive ? '#ff0000' : '#00ff00');
+
+            var speed = isSocialDistancingActive ? 60 : 200;
+            var halfSpeed = speed / 2;
+            for (var healthyIndex = 0; healthyIndex < healthies.length; healthyIndex++) {
+                var speedX = Math.random() * speed - halfSpeed;
+                var speedY = Math.random() * speed - halfSpeed;
+                healthies[healthyIndex].setVelocity(speedX, speedY);
+            }
+            for (var sickIndex = 0; sickIndex < sicks.length; sickIndex++) {
+                var speedX = Math.random() * speed - halfSpeed;
+                var speedY = Math.random() * speed - halfSpeed;
+                sicks[sickIndex].sprite.setVelocity(speedX, speedY);
+            }
+            for (var recoveredIndex = 0; recoveredIndex < recovereds.length; recoveredIndex++) {
+                if (recovereds[recoveredIndex].isDead) {
+                    // dead
+                    continue;
+                }
+                var speedX = Math.random() * speed - halfSpeed;
+                var speedY = Math.random() * speed - halfSpeed;
+                sicks[sickIndex].sprite.setVelocity(speedX, speedY);
+            }
+
+        }
+
+        function preload() {
+            this.load.image('sick', 'img/sick.png');
+            this.load.image('healthy', 'img/healthy.png');
+            this.load.image('recovered', 'img/recovered.png');
+            this.load.image('dead', 'img/dead.png');
+            this.load.image('doctor', 'img/doctor.png');
+            this.load.image('docshadow', 'img/docshadow.png');
+        }
+
+        function createSicks(game) {
+            var speed = isSocialDistancingActive ? 30 : 100;
+            var sick1 = {
+                sprite: game.physics.add.sprite(width - dudeSize, height - dudeSize, 'sick'),
+                sickDays: 0,
+                maxSickDays: Math.random() * 1000 + 500
+            };
+            sick1.sprite.setVelocity(-1 * speed, -1 * speed);
+            sick1.sprite.setBounce(1, 1);
+            sick1.sprite.setCollideWorldBounds(true);
+
+            var sick2 = {
+                sprite: game.physics.add.sprite(width - dudeSize, dudeSize, 'sick'),
+                sickDays: 0,
+                maxSickDays: Math.random() * 1000 + 500
+            };
+            sick2.sprite.setVelocity(-1 * speed, speed);
+            sick2.sprite.setBounce(1, 1);
+            sick2.sprite.setCollideWorldBounds(true);
+            sicks.push(sick1);
+            sicks.push(sick2);
+            if(width < 1201) {
+                return;
+            }
+
+            var sick3 = {
+                sprite: game.physics.add.sprite(dudeSize, height - dudeSize, 'sick'),
+                sickDays: 0,
+                maxSickDays: Math.random() * 1000 + 500
+            };
+
+            sick3.sprite.setVelocity(speed, -1 * speed);
+            sick3.sprite.setBounce(1, 1);
+            sick3.sprite.setCollideWorldBounds(true);
+            sicks.push(sick3);
+        }
+
+        function create() {
+            this.physics.world.setBounds(0, 0, width, height - bottomBarHeight);
+
+            createSicks(this);
+            var speed = isSocialDistancingActive ? 60 : 200;
+
+            for (var healthyIndex = 0; healthyIndex < healthyCount; healthyIndex++) {
+                var healthy = this.physics.add.sprite(Math.random() * (width - dudeSize) + dudeSize / 2, Math.random() * (height - dudeSize - bottomBarHeight) + dudeSize / 2, 'healthy');
+                var speedX = Math.random() * speed - speed / 2;
+                var speedY = Math.random() * speed - speed / 2;
+
+                healthy.setVelocity(speedX, speedY);
+                healthy.setBounce(1, 1);
+                healthy.setCollideWorldBounds(true);
+                healthies.push(healthy);
+            }
+
+            var style = { font: "bold 20px Courier New", fill: "#fff" };
+            healthyLabel = this.add.text(10, height - 170, 'Gesund:   ' + healthyCount, style);
+            sickLabel = this.add.text(10, height - 130, 'Krank:      ' + sickCount, style);
+            recoveredLabel = this.add.text(10, height - 90, 'Genesen: ' + recoveredCount, style);
+            deadLabel = this.add.text(10, height - 50, 'Tot:      ' + deadCount, style);
+
+            if (isSocialDistancingActive) {
+                var style = { font: "bold 24px Courier New", fill: "#f00" };
+                socialDistancingButton = this.add.text(width - 300, height - bottomBarHeight + 10, 'Social Distancing\r\n  deaktivieren', style)
+                    .setInteractive()
+                    .on('pointerdown', activateSocialDistancing);
+            }
+            else {
+                var style = { font: "bold 24px Courier New", fill: "#0f0" };
+                socialDistancingButton = this.add.text(width - 300, height - bottomBarHeight + 10, 'Social Distancing\r\n   aktivieren', style)
+                    .setInteractive()
+                    .on('pointerdown', activateSocialDistancing);
+            }
+            var graphics = this.add.graphics({ fillStyle: { color: 0x0000ff } });
+            var rect = new Phaser.Geom.Rectangle(socialDistancingButton.x - 20, socialDistancingButton.y - 10, socialDistancingButton.width + 40, socialDistancingButton.height + 20);
+            graphics.strokeRectShape(rect);
+
+
+            this.add.line(0, 0, 0, height - bottomBarHeight, 2 * width, height - bottomBarHeight, 0xffffff);
+
+            var particles = this.add.particles('docshadow');
+
+            var emitter = particles.createEmitter({
+                speed: 50,
+                scale: { start: 1, end: 0 },
+                blendMode: 'ADD'
+            });
+
+            doctor = this.physics.add.sprite(docSize, docSize, 'doctor');
+            doctor.setCollideWorldBounds(true);
+
+            emitter.startFollow(doctor);
+
+            keys = this.input.keyboard.addKeys({
+                up: 'up',
+                down: 'down',
+                left: 'left',
+                right: 'right'
+            });
+        }
+
+        var count = 0;
+
+        function update() {
+            count++;
+            var stepWidth = 5;
+            var x = 250 + count / stepWidth;
+            var maxHeight = bottomBarHeight;
+            var maxFactor = bottomBarHeight * 1.0 / dudeCount;
+            var maxLineCount = (width - 600) * 5;
+            if (count % stepWidth === 0 && count < maxLineCount) {
+                var lSick = this.add.line(0, 0, x, height, x, height - maxFactor * sickCount, 0xff0000);
+                lSick.setOrigin(0, 0);
+                var lHealed = this.add.line(0, 0, x, height - maxFactor * (sickCount + recoveredCount), x, height - maxFactor * sickCount, 0x008000);
+                lHealed.setOrigin(0, 0);
+                var lDead = this.add.line(0, 0, x, height - maxFactor * (sickCount + recoveredCount), x, height - maxFactor * (sickCount + recoveredCount + deadCount), 0x404040);
+                lDead.setOrigin(0, 0);
+                var lHealthy = this.add.line(0, 0, x, height - maxHeight, x, height - maxFactor * (sickCount + recoveredCount + deadCount), 0xcccccc);
+                lHealthy.setOrigin(0, 0);
+            }
+
+            sickCount = 0;
+
+            for (var sickIndex = 0; sickIndex < sicks.length; sickIndex++) {
+                var sickDude = sicks[sickIndex];
+                var sick = sickDude.sprite;
+                sickDude.sickDays++;
+                var docDistance = (sick.x - doctor.x) * (sick.x - doctor.x) + (sick.y - doctor.y) * (sick.y - doctor.y);
+                if (sickDude.sickDays > sickDude.maxSickDays || docDistance < healDistance) {
+                    var deathProbability = .96;
+                    if (sicks.length > .15 * dudeCount) {
+                        deathProbability -= (sickCount * .1 / dudeCount); // the more people are sick, the higher the probability to die 
+                    }                                                 // due to health system overload
+
+                    var isDead = false;
+                    if (Math.random() < deathProbability || docDistance < healDistance) {
+                        sick.setTexture('recovered');
+                        recoveredCount++;
+                    } else {
+                        sick.setTexture('dead');
+                        sick.setVelocity(0, 0);
+                        deadCount++;
+                        isDead = true;
+                    }
+                    sicks.splice(sickIndex, 1);
+                    recovereds.push({
+                        sprite: sick, isDead: isDead
+                    });
+                    continue;
+                }
+                sickCount++;
+                for (var healthyIndex = 0; healthyIndex < healthies.length; healthyIndex++) {
+                    var healthy = healthies[healthyIndex];
+
+                    var distance = (sick.x - healthy.x) * (sick.x - healthy.x) + (sick.y - healthy.y) * (sick.y - healthy.y);
+                    if (distance < infectDistance) {
+                        healthy.setTexture('sick');
+                        healthies.splice(healthyIndex, 1);
+                        sicks.push({
+                            sprite: healthy,
+                            sickDays: 0,
+                            maxSickDays: Math.random() * 1000 + 500
+                        });
+                        healthyCount--;
+                        continue;
+                    }
+                }
+            }
+
+            healthyLabel.setText('Gesund:  ' + healthyCount);
+            recoveredLabel.setText('Genesen: ' + recoveredCount);
+            deadLabel.setText('Tot:     ' + deadCount);
+            sickLabel.setText('Krank:   ' + sickCount);
+
+            moveDoc();
+        }
+
+        function moveDoc() {
+            if (keys.down.isDown) {
+                doctor.y += docSpeed;
+            }
+            if (keys.up.isDown) {
+                doctor.y -= docSpeed;
+            }
+            if (keys.left.isDown) {
+                doctor.x -= docSpeed;
+            }
+            if (keys.right.isDown) {
+                doctor.x += docSpeed;
+            }
+            if (doctor.x < docSpeed / 2) {
+                doctor.x = docSpeed / 2;
+            }
+            if (doctor.y < docSpeed / 2) {
+                doctor.y = docSpeed / 2;
+            }
+            if (doctor.x > width - docSpeed / 2) {
+                doctor.x = width - docSpeed / 2;
+            }
+            if (doctor.y > height - docSpeed / 2) {
+                doctor.y = height - docSpeed / 2;
+            }
+        }
+    </script>
+
+</body>
+
+</html>
