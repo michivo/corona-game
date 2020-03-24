@@ -67,6 +67,27 @@
                 href="mailto:michfasch@gmx.at">michfasch@gmx.at</a>.
         </p>
     </div>
+
+    <div class="modal fade" id="replayModal" tabindex="-1" role="dialog" aria-labelledby="replayModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="replayModalLabel">Runde zu Ende</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="replayModalBody">
+                    Das Spiel ist aus, niemand ist mehr krank. Möchtest du noch einmal spielen?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Nein</button>
+                    <button type="button" class="btn btn-primary" onclick="location.reload(false)">Ja</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         var width = window.innerWidth;
         var height = window.innerHeight;
@@ -96,11 +117,16 @@
         var recovereds = [];
         var keys;
         var doctor;
+        var currentGame;
 
         function startGame(withSocialDistancing) {
             document.getElementById("intro").style.display = "none";
             isSocialDistancingActive = withSocialDistancing;
-            var game = new Phaser.Game(config);
+            runGame();
+        }
+
+        function runGame() {
+            currentGame = new Phaser.Game(config);
         }
 
         var healthyLabel;
@@ -196,6 +222,24 @@
             sick3.sprite.setBounce(1, 1);
             sick3.sprite.setCollideWorldBounds(true);
             sicks.push(sick3);
+        }
+
+        function getPoints() {
+            var points = recoveredCount * 1.0 / dudeCount + healthyCount * 1.5 / dudeCount - deadCount * 5.0 / dudeCount;
+            return points * 1000;
+        }
+
+        function showPopup() {
+            var points = getPoints();
+            var text = "Das Spiel ist aus, du hast " + points + " Punkte erreicht.";
+            if (deadCount == 0) {
+                text += "<br><b>Niemand ist gestorben. Gratuliere!</b>";
+            }
+            text += "<br>Möchtest du noch einmal spielen?";
+            $('#replayModalBody').html(text);
+            $('#replayModal').modal({
+                show: true
+            });
         }
 
         function create() {
@@ -305,6 +349,10 @@
                         isDead = true;
                     }
                     sicks.splice(sickIndex, 1);
+                    if (sicks.length == 0) {
+                        showPopup();
+                    }
+
                     recovereds.push({
                         sprite: sick, isDead: isDead
                     });
